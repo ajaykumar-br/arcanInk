@@ -6,8 +6,7 @@
   "scripts": {
     "build": "rimraf dist && tsc -b",
     "dev": "node dist/index.js",
-    "start": "pnpm build && pnpm dev",
-    "@repo/db": "workspace:*"
+    "start": "pnpm build && pnpm dev"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +19,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.0",
     "@repo/backend-common": "workspace:*",
-    "@repo/common": "workspace:*"
+    "@repo/common": "workspace:*",
+    "@repo/db": "workspace:*"
   }
 }
