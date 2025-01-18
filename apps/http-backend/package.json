@@ -1,0 +1,25 @@
+{
+  "name": "http-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rimraf dist && tsc -b",
+    "dev": "node dist/index.js",
+    "start": "pnpm build && pnpm dev",
+    "@repo/db": "workspace:*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/express": "^5.0.0",
+    "@repo/backend-common": "workspace:*",
+    "@repo/common": "workspace:*"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "ws-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rimraf dist && tsc -b",
+    "dev": "node dist/index.js",
+    "start": "pnpm build && pnpm dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
