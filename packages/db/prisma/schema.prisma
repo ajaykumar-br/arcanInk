@@ -34,7 +34,7 @@ model Room {
 
 model Canvas {
   id          Int       @id @default(autoincrement())
-  type        shapeTypes  // rect, circle
+  shape        shapeTypes  // rect, circle
   shapeParams String
   userId      String
   roomId      Int

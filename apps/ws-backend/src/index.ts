@@ -1,6 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET } from "@repo/backend-common/config";
+import { prisma } from "@repo/db/prisma";
 
 const wss = new WebSocketServer({port: 8080});
 
@@ -47,16 +48,51 @@ wss.on("connection", (ws, request) => {
         userId
     })
 
-    ws.on("message", (data) => {
+    ws.on("message", async (data) => {
         const parsedData = JSON.parse(data.toString());
         if(parsedData.type === "join_room") {
-            // do something
-        }
-        if(parsedData.type === "chat") {
-            // do something
+            const user = users.find((user) => {user.ws === ws});
+            user?.rooms.push(parsedData.roomId);
         }
         if(parsedData.type === "leave_room") {
-            // do something
+            // find if the filter is present
+            const user = users.find(x => x.ws === ws);
+            if(!user) {
+                return;
+            }
+            // find the user and remove roomId from his rooms array
+            user.rooms = user.rooms.filter(x => x === parsedData.room);
+        }
+        if(parsedData.type === "chat") {
+            const roomId = parsedData.roomId;
+            const shape = parsedData.shape;
+            const shapeParams = parsedData.shapeParams;
+            // find user's room
+            const user = users.find(x => x.userId === userId);
+            if(!user) {
+                return null;
+            }
+            // get roomId, userId, store the chat in db
+            await prisma.canvas.create({
+              data: {
+                shape,
+                shapeParams,
+                userId: user.toString(),
+                roomId: Number(roomId),
+              },
+            });
+            // broadcast the message
+            users.map((user) => {
+                if(user.rooms.includes(roomId)){
+                    user.ws.send(JSON.stringify({
+                        type: "chat",
+                        shape,
+                        shapeParams,
+                        userId: user,
+                        roomId
+                    }));
+                }
+            });
         }
     });
 })
