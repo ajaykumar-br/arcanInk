@@ -4,10 +4,16 @@ import { RoomSchema, SignInSchema, SignUpSchema } from "@repo/common/types";
 import { prisma } from "@repo/db/prisma";
 import jwt from "jsonwebtoken";
 import { CustomRequest, middleware } from "./middleware";
-
+import cors from "cors";
 const app = express();
 
 app.use(express.json());
+app.use(
+  cors({
+    origin: "http://localhost:3001",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
 
 app.post('/signup',async (req, res) => {
     // parse req throw zod
