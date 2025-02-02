@@ -5,6 +5,7 @@ import axios from "axios";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { HTTP_BACKEND_URL } from "@/config";
 
 type signUp = {
   username: string;
@@ -25,10 +26,10 @@ export function AuthPage({ isSignin }: {
 
     const onSubmit = async (data: signUp) => {
         try {
-            const response = await axios.post(`http://localhost:3001/${isSignin? "signin": "signup"}`, data);
+            const response = await axios.post(`${HTTP_BACKEND_URL}/${isSignin? "signin": "signup"}`, data);
             if(isSignin) {
               localStorage.setItem("token", response.data.token);
-              router.push('/canvas');
+              router.push('/room');
             } else {
               router.push('/signin');
             }

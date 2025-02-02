@@ -11,7 +11,7 @@ export function Navbar() {
 
   useEffect(() => {
     const token = localStorage.getItem("jwtToken");
-    setIsLoggedIn(!!token);
+    setIsLoggedIn(true);
   }, []);
 
   const handleLogout = () => {
@@ -24,7 +24,6 @@ export function Navbar() {
     <nav className="bg-white shadow-sm fixed w-full z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Left side - Logo */}
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-primary">
               ArcanInk
