@@ -19,7 +19,7 @@ export function Card({
       target="_blank"
     >
       <h2>{title}</h2>
-      <p>{children}</p>
+      {children}
     </a>
   );
 }

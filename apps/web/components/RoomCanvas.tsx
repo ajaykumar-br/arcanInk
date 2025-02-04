@@ -1,15 +1,31 @@
 "use client";
 
-import { useSocket } from "@/hooks/useSocket";
+import { useEffect, useState } from "react";
+import { Canvas } from "./Canvas";
+import { WS_URL } from "@/config";
 
-export function RoomCanvas({roomId}: {roomId: string}) {
-    const { socket } = useSocket(roomId);
+export function RoomCanvas({ roomId }: { roomId: string }) {
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
-    if(!socket) {
-        return <div>Loading Canvas...</div>
-    }
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const ws = new WebSocket(`${WS_URL}?token=${token}`);
+    ws.onopen = () => {
+      setSocket(ws);
+      const data = JSON.stringify({
+        type: "join_room",
+        roomId,
+      });
+      ws.send(data);
+    };
+  }, []);
 
-    return <div className="flex items-center justify-center h-screen">
-        room {`${roomId}`}
+  if (!socket) return <div>Connecting to server ...</div>;
+
+  return (
+    <div>
+      <Canvas roomId={roomId} socket={socket} />
     </div>
+  );
 }

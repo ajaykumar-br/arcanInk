@@ -10,12 +10,12 @@ export function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("jwtToken");
+    const token = localStorage.getItem("token");
     setIsLoggedIn(true);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("token");
     setIsLoggedIn(false);
     router.push('/');
   };

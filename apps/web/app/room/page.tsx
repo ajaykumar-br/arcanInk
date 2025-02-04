@@ -22,7 +22,6 @@ export default function Room() {
                 Authorization: localStorage.getItem("token"),
               },
             });
-            console.log(res.data);
             router.push(`/canvas/${res.data.roomId}`);
         } catch (e) {
             console.error(e);
