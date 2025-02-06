@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { RightBar } from "./RightBar";
 import { CreateShape } from "@/draw/CreateShape";
 
-export type Tool = "rect" | "line" | "circle";
+export type Tool = "RECT" | "LINE" | "CIRCLE";
 
 export function Canvas({
   roomId,
@@ -13,7 +13,7 @@ export function Canvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawingCanvas, setDrawingCanvas] = useState<CreateShape>();
-  const [selectedTool, setSelectedTool] = useState<Tool>("rect");
+  const [selectedTool, setSelectedTool] = useState<Tool>("RECT");
 
   useEffect(() => {
     drawingCanvas?.setTool(selectedTool);
@@ -28,7 +28,7 @@ export function Canvas({
     return () => {
       draw.destroy();
     };
-  }, [canvasRef]);
+  }, [canvasRef, roomId, socket]);
 
   return (
     <div className="relative">

@@ -43,19 +43,17 @@ wss.on("connection", (ws, request) => {
   }
 
   users.push({
-    ws,
-    rooms: [],
     userId,
+    rooms: [],
+    ws,
   });
 
   ws.on("message", async (data) => {
     const parsedData = JSON.parse(data.toString());
     if (parsedData.type === "join_room") {
-      const user = users.find((user) => {
-        user.ws === ws;
-      });
+      const user = users.find((x) => x.ws === ws);
       user?.rooms.push(parsedData.roomId);
-      console.log(userId);
+      console.log("line 58", user?.rooms);
     }
     if (parsedData.type === "leave_room") {
       // find if the filter is present
@@ -67,6 +65,7 @@ wss.on("connection", (ws, request) => {
       user.rooms = user.rooms.filter((x) => x === parsedData.room);
     }
     if (parsedData.type === "chat") {
+      // console.log(parsedData);
       const roomId = parsedData.roomId;
       const shape = parsedData.shape.toUpperCase();
       const shapeParams = parsedData.shapeParams;
@@ -86,7 +85,9 @@ wss.on("connection", (ws, request) => {
       });
       // broadcast the message
       users.map((user) => {
+        console.log("line 91", user.rooms);
         if (user.rooms.includes(roomId)) {
+          console.log(user.userId);
           user.ws.send(
             JSON.stringify({
               type: "chat",

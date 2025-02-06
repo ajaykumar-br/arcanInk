@@ -15,23 +15,23 @@ export function RightBar({
         <IconsButton
           icon={<RectangleHorizontalIcon />}
           onClick={() => {
-            setSelectedTool("rect");
+            setSelectedTool("RECT");
           }}
-          activated={selectedTool == "rect"}
+          activated={selectedTool == "RECT"}
         />
         <IconsButton
           icon={<Circle />}
           onClick={() => {
-            setSelectedTool("circle");
+            setSelectedTool("CIRCLE");
           }}
-          activated={selectedTool == "circle"}
+          activated={selectedTool == "CIRCLE"}
         />
         <IconsButton
           icon={<PenLineIcon />}
           onClick={() => {
-            setSelectedTool("line");
+            setSelectedTool("LINE");
           }}
-          activated={selectedTool == "line"}
+          activated={selectedTool == "LINE"}
         />
       </div>
     </div>

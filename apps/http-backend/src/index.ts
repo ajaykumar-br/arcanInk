@@ -48,7 +48,7 @@ app.post("/signup", async (req, res) => {
 
 app.post("/signin", async (req, res) => {
   const parsedReq = SignInSchema.safeParse(req.body);
-  // if not parsed correctly, respond with 403 incorrect error
+  // if not parsed corly, respond with 403 incor error
   if (!parsedReq.success) {
     res.status(403).json({
       msg: "Invalid zod types",
@@ -56,7 +56,7 @@ app.post("/signin", async (req, res) => {
     return;
   }
 
-  // validate with db for correct password
+  // validate with db for cor password
   const user = await prisma.user.findFirst({
     where: {
       email: parsedReq.data.username,
@@ -85,7 +85,7 @@ app.post("/room", middleware, async (req: CustomRequest, res) => {
 
   if (!parsedReq.success) {
     res.status(403).json({
-      msg: "Incorrect Inputs",
+      msg: "Incor Inputs",
     });
     return;
   }
@@ -121,7 +121,7 @@ app.post("/room", middleware, async (req: CustomRequest, res) => {
 app.get("/getDrawings/:roomId", async (req, res) => {
   try {
     const roomId = Number(req.params.roomId);
-    const canvas = prisma.canvas.findMany({
+    const canvas = await prisma.canvas.findMany({
       where: {
         roomId: roomId,
       },
@@ -130,7 +130,6 @@ app.get("/getDrawings/:roomId", async (req, res) => {
       },
       take: 50,
     });
-    console.log(canvas);
 
     res.json({
       messages: canvas,

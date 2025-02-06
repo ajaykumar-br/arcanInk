@@ -1,8 +1,7 @@
 import { Tool } from "@/components/Canvas";
 import { getExistingShapes } from "./http";
 
-export type Shape =
-  | {
+export type Shape = {
       shape: Tool;
       shapeParams: {
         x: number;
@@ -38,7 +37,7 @@ export class CreateShape {
   private clicked: boolean;
   private startX = 0;
   private startY = 0;
-  private selectedTool: Tool = "rect";
+  private selectedTool: Tool = "RECT";
 
   socket: WebSocket;
 
@@ -74,18 +73,19 @@ export class CreateShape {
   }
 
   async init() {
-    const a = await getExistingShapes(this.roomId);
-    console.log("sdfsdf", a);
+    this.existingShapes = await getExistingShapes(this.roomId);
     this.reDraw();
   }
 
   initHandlers() {
     this.socket.onmessage = (e) => {
       const message = JSON.parse(e.data);
-
       if (message.type == "chat") {
-        const parsedShape = JSON.parse(message.message);
-        this.existingShapes.push(parsedShape.shape);
+        const parsedShape: Shape = {
+          shape: message.shape,
+          shapeParams: JSON.parse(message.shapeParams),
+        };
+        this.existingShapes.push(parsedShape);
         this.reDraw();
       }
     };
@@ -95,15 +95,12 @@ export class CreateShape {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.fillStyle = "black";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.existingShapes.map((s: Shape) => {
-      if (s.shape === "rect" && "width" in s.shapeParams) {
+    this.existingShapes.map((shapes: Shape) => {
+      const s = shapes.shape;
+      const sp = shapes.shapeParams;
+      if (s === "RECT" && "width" in sp) {
         this.ctx.strokeStyle = "white";
-        this.ctx.strokeRect(
-          s.shapeParams.x,
-          s.shapeParams.y,
-          s.shapeParams.width,
-          s.shapeParams.height
-        );
+        this.ctx.strokeRect(sp.x, sp.y, sp.width, sp.height);
       }
     });
   }
@@ -151,7 +148,7 @@ export class CreateShape {
     let shapes: Shape | null = null;
 
     shapes = {
-      shape: "rect",
+      shape: "RECT",
       shapeParams: {
         x: this.startX,
         y: this.startY,
@@ -172,7 +169,5 @@ export class CreateShape {
         roomId: this.roomId,
       })
     );
-
-    console.log(this.existingShapes);
   }
 }

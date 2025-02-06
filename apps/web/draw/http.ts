@@ -3,10 +3,15 @@ import axios from "axios";
 import { Shape } from "./CreateShape";
 
 export async function getExistingShapes(roomId: string) {
-  const url = `${HTTP_BACKEND_URL}/getDrawings/${roomId}`;
-  console.log("line 7", url);
-  const res = await axios.get(url);
-  const messages = res;
+  const res = await axios.get(`${HTTP_BACKEND_URL}/getDrawings/${roomId}`);
+  const messages: Shape[] = res.data.messages;
 
-  return messages;
+  return messages.map((message) => ({
+    shape: message.shape,
+    // Parse if stored as JSON string
+    shapeParams:
+      typeof message.shapeParams === "string"
+        ? JSON.parse(message.shapeParams)
+        : message.shapeParams,
+  }));
 }
