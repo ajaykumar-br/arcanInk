@@ -38,6 +38,7 @@ export class CreateShape {
   private startX = 0;
   private startY = 0;
   private selectedTool: Tool = "RECT";
+  private isMouseHandlersInitialized = false;
 
   socket: WebSocket;
 
@@ -95,17 +96,38 @@ export class CreateShape {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.fillStyle = "black";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.existingShapes.map((shapes: Shape) => {
-      const s = shapes.shape;
-      const sp = shapes.shapeParams;
-      if (s === "RECT" && "width" in sp) {
-        this.ctx.strokeStyle = "white";
-        this.ctx.strokeRect(sp.x, sp.y, sp.width, sp.height);
+    this.existingShapes.forEach((shape: Shape) => {
+      this.ctx.strokeStyle = "white";
+      const { shape: tool, shapeParams } = shape;
+      if (tool === "RECT" && "width" in shapeParams) {
+        this.ctx.strokeRect(
+          shapeParams.x,
+          shapeParams.y,
+          shapeParams.width,
+          shapeParams.height
+        );
+      } else if (tool === "CIRCLE" && "radius" in shapeParams) {
+        this.ctx.beginPath();
+        this.ctx.arc(
+          shapeParams.x,
+          shapeParams.y,
+          shapeParams.radius,
+          0,
+          2 * Math.PI
+        );
+        this.ctx.stroke();
+      } else if (tool === "LINE" && "x2" in shapeParams) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(shapeParams.x1, shapeParams.y1);
+        this.ctx.lineTo(shapeParams.x2, shapeParams.y2);
+        this.ctx.stroke();
       }
     });
   }
 
   initMouseHandlers() {
+    if (this.isMouseHandlersInitialized) return;
+    this.isMouseHandlersInitialized = true;
     this.canvas.addEventListener("mousedown", this.mouseDownHandler.bind(this));
     this.canvas.addEventListener("mouseup", this.mouseUpHandler.bind(this));
     this.canvas.addEventListener("mousemove", this.mouseMoveHandler.bind(this));
@@ -113,51 +135,107 @@ export class CreateShape {
 
   mouseDownHandler(e: MouseEvent) {
     if (!this.canvas) return;
-    const rect = this.canvas.getBoundingClientRect();
-    this.startX = e.clientX - rect.left;
-    this.startY = e.clientY - rect.top;
+    this.startX = e.clientX;
+    this.startY = e.clientY;
     this.clicked = true;
+  }
+
+  drawRect(e: MouseEvent) {
+    const width = e.clientX - this.startX;
+    const height = e.clientY - this.startY;
+    this.ctx.strokeStyle = "white";
+    this.ctx.strokeRect(this.startX, this.startY, width, height);
+  }
+
+  drawCircle(e: MouseEvent) {
+    const radius = Math.sqrt(
+      Math.pow(e.clientX - this.startX, 2) +
+        Math.pow(e.clientY - this.startY, 2)
+    );
+    this.ctx.beginPath();
+    this.ctx.arc(this.startX, this.startY, radius, 0, 2 * Math.PI);
+    this.ctx.stroke();
+  }
+
+  drawLine(e: MouseEvent) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.startX, this.startY);
+    this.ctx.lineTo(e.clientX, e.clientY);
+    this.ctx.stroke();
   }
 
   mouseMoveHandler(e: MouseEvent) {
     if (!this.clicked) return;
     if (!this.canvas || !this.ctx) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const width = x - this.startX;
-    const height = y - this.startY;
-
+    const x = e.clientX;
+    const y = e.clientY;    
+    
     // Clear previous drawings
     this.reDraw();
-
+    
     // Draw the rectangle
-    this.ctx.strokeStyle = "white";
-    this.ctx.strokeRect(this.startX, this.startY, width, height);
+    if (this.selectedTool === "RECT") {
+      this.drawRect(e);
+    } else if(this.selectedTool === "CIRCLE") {
+      this.drawCircle(e);
+    } else if(this.selectedTool === "LINE") {
+      this.drawLine(e);
+    }
   }
 
   mouseUpHandler(e: MouseEvent) {
+    // to prevent from reloading the page
+    e.stopPropagation();
+    e.preventDefault();
+
     this.clicked = false;
     if (!this.canvas) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const width = e.clientX - rect.left - this.startX;
-    const height = e.clientY - rect.top - this.startY;
-
+    
     let shapes: Shape | null = null;
+    
+    const width = e.clientX - this.startX;
+    const height = e.clientY - this.startY;
 
-    shapes = {
-      shape: "RECT",
-      shapeParams: {
-        x: this.startX,
-        y: this.startY,
-        width: width,
-        height: height,
-      },
-    };
+    if(this.selectedTool === "RECT") {
+      shapes = {
+        shape: "RECT",
+        shapeParams: {
+          x: this.startX,
+          y: this.startY,
+          width: width,
+          height: height,
+        }
+      }
+    } else if(this.selectedTool === "LINE") {
+      shapes = {
+        shape: "LINE",
+        shapeParams: {
+          x1: this.startX,
+          y1: this.startY,
+          x2: e.clientX,
+          y2: e.clientY,
+        }
+      }
+    } else if(this.selectedTool === "CIRCLE") {
+      const radius = Math.sqrt(
+        Math.pow(e.clientX - this.startX, 2) +
+        Math.pow(e.clientY - this.startY, 2)
+      );
+      shapes = {
+        shape: "CIRCLE",
+        shapeParams: {
+          x: this.startX,
+          y: this.startY,
+          radius: radius,
+        }
+      }
+    }
 
     if (!shapes) return;
+
+    console.log(shapes);
 
     this.existingShapes.push(shapes);
 
