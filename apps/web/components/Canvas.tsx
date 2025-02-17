@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { RightBar } from "./RightBar";
 import { CreateShape } from "@/draw/CreateShape";
 
-export type Tool = "RECT" | "LINE" | "CIRCLE";
+export type Tool = "" | "RECT" | "LINE" | "CIRCLE" | "PENCIL";
 
 export function Canvas({
   roomId,

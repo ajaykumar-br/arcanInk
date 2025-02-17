@@ -1,4 +1,4 @@
-import { Circle, PenLineIcon, RectangleHorizontalIcon } from "lucide-react";
+import { Circle, PencilIcon, PenLineIcon, RectangleHorizontalIcon } from "lucide-react";
 import { IconsButton } from "./IconsButton";
 import { Tool } from "./Canvas";
 
@@ -17,21 +17,28 @@ export function RightBar({
           onClick={() => {
             setSelectedTool("RECT");
           }}
-          activated={selectedTool == "RECT"}
+          activated={selectedTool === "RECT"}
         />
         <IconsButton
           icon={<Circle />}
           onClick={() => {
             setSelectedTool("CIRCLE");
           }}
-          activated={selectedTool == "CIRCLE"}
+          activated={selectedTool === "CIRCLE"}
         />
         <IconsButton
           icon={<PenLineIcon />}
           onClick={() => {
             setSelectedTool("LINE");
           }}
-          activated={selectedTool == "LINE"}
+          activated={selectedTool === "LINE"}
+        />
+        <IconsButton
+          icon={<PencilIcon />}
+          onClick={() => {
+            setSelectedTool("PENCIL");
+          }}
+          activated={selectedTool === "PENCIL"}
         />
       </div>
     </div>

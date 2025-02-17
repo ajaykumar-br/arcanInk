@@ -26,6 +26,12 @@ export type Shape = {
         y: number;
         radius: number;
       };
+    }
+  | {
+      shape: Tool;
+      shapeParams: {
+          points: { x: number; y: number }[];
+      };
     };
 
 export class CreateShape {
@@ -37,8 +43,9 @@ export class CreateShape {
   private clicked: boolean;
   private startX = 0;
   private startY = 0;
-  private selectedTool: Tool = "RECT";
+  private selectedTool: Tool = "";
   private isMouseHandlersInitialized = false;
+  private points: {x: number, y: number}[] = []; // pencil points
 
   socket: WebSocket;
 
@@ -121,6 +128,16 @@ export class CreateShape {
         this.ctx.moveTo(shapeParams.x1, shapeParams.y1);
         this.ctx.lineTo(shapeParams.x2, shapeParams.y2);
         this.ctx.stroke();
+      } else if(tool === "PENCIL" && "points" in shapeParams) {
+        const points = shapeParams.points;
+        if(points.length < 2) return;
+        this.ctx.beginPath();
+        if (points[0] !== undefined) {
+          this.ctx.moveTo(points[0].x, points[0].y);
+        }
+        points.forEach( point => this.ctx.lineTo(point.x, point.y));
+        this.ctx.stroke();
+        this.ctx.closePath();
       }
     });
   }
@@ -138,6 +155,10 @@ export class CreateShape {
     this.startX = e.clientX;
     this.startY = e.clientY;
     this.clicked = true;
+
+    if(this.selectedTool === "PENCIL") {
+      this.points.push({x:this.startX, y:this.startY})
+    }
   }
 
   drawRect(e: MouseEvent) {
@@ -164,12 +185,25 @@ export class CreateShape {
     this.ctx.stroke();
   }
 
+  drawPencil(e: MouseEvent) {
+    // Draw a line from the last point to the current point
+    this.reDraw();
+    this.points.push({x:e.clientX, y:e.clientY});
+    this.ctx.beginPath();
+    if(!this.points[0]) return;
+    this.ctx.moveTo(this.points[0]?.x, this.points[0].y);
+    this.points.forEach(point => this.ctx.lineTo(point.x, point.y));
+    this.ctx.stroke();
+    this.startX = e.clientX;
+    this.startY = e.clientY;
+  }
+
   mouseMoveHandler(e: MouseEvent) {
     if (!this.clicked) return;
     if (!this.canvas || !this.ctx) return;
 
     const x = e.clientX;
-    const y = e.clientY;    
+    const y = e.clientY;
     
     // Clear previous drawings
     this.reDraw();
@@ -181,6 +215,8 @@ export class CreateShape {
       this.drawCircle(e);
     } else if(this.selectedTool === "LINE") {
       this.drawLine(e);
+    } else if(this.selectedTool === "PENCIL") {
+      this.drawPencil(e);
     }
   }
 
@@ -231,6 +267,14 @@ export class CreateShape {
           radius: radius,
         }
       }
+    } else if(this.selectedTool === "PENCIL" && this.points.length > 0) {
+      shapes = {
+        shape: "PENCIL",
+        shapeParams: {
+          points: this.points,
+        }
+      }
+      this.points = [];
     }
 
     if (!shapes) return;
