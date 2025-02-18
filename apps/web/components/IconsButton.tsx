@@ -2,7 +2,7 @@ import { Button } from "@repo/ui/button";
 import { ReactNode } from "react";
 
 export function IconsButton({icon, onClick, activated}: {icon: ReactNode, onClick: ()=>void, activated: boolean}) {
-    return <div className={`m-2 pointer rounded-full border p-2 bg-black hover:bg-gray ${activated ? "text-red-500" : "text-white"}`} onClick={onClick}>
+    return <div className={`m-2 pointer p-2 hover:bg-gray ${activated ? "text-green-400 border border-green-300 rounded-full" : "text-white"}`} onClick={onClick}>
             {icon}
         </div>
 }

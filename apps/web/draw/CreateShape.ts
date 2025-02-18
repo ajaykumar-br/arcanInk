@@ -35,7 +35,6 @@ export type Shape = {
     };
 
 export class CreateShape {
-  // equivalent to Game class
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private existingShapes: Shape[];
@@ -101,7 +100,7 @@ export class CreateShape {
 
   reDraw() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.fillStyle = "black";
+    this.ctx.fillStyle = "#232329";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.existingShapes.forEach((shape: Shape) => {
       this.ctx.strokeStyle = "white";
@@ -136,6 +135,17 @@ export class CreateShape {
           this.ctx.moveTo(points[0].x, points[0].y);
         }
         points.forEach( point => this.ctx.lineTo(point.x, point.y));
+        this.ctx.stroke();
+        this.ctx.closePath();
+      } else if(tool === "ARROW" && "x2" in shapeParams) {
+        const arrowLength = 15;
+        const angle = Math.atan2(shapeParams.y2 - shapeParams.y1, shapeParams.x2 - shapeParams.x1);
+        this.ctx.beginPath();
+        this.ctx.moveTo(shapeParams.x1, shapeParams.y1);
+        this.ctx.lineTo(shapeParams.x2, shapeParams.y2);
+        this.ctx.lineTo(shapeParams.x2 - arrowLength * Math.cos(angle - Math.PI/6), shapeParams.y2 - arrowLength * Math.sin(angle - Math.PI/6));
+        this.ctx.moveTo(shapeParams.x2, shapeParams.y2);
+        this.ctx.lineTo(shapeParams.x2 - arrowLength * Math.cos(angle + Math.PI/6), shapeParams.y2 - arrowLength * Math.sin(angle + Math.PI/6));
         this.ctx.stroke();
         this.ctx.closePath();
       }
@@ -198,6 +208,21 @@ export class CreateShape {
     this.startY = e.clientY;
   }
 
+  drawArrow(e: MouseEvent) {
+    const arrowLength = 15;
+    const angle = Math.atan2(e.clientY - this.startY, e.clientX - this.startX);
+    const x2 = e.clientX;
+    const y2 = e.clientY;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.startX, this.startY);
+    this.ctx.lineTo(x2, y2);
+    this.ctx.lineTo(x2 - arrowLength * Math.cos(angle - Math.PI/6), y2 - arrowLength * Math.sin(angle - Math.PI/6));
+    this.ctx.moveTo(x2, y2);
+    this.ctx.lineTo(x2 - arrowLength * Math.cos(angle + Math.PI/6), y2 - arrowLength * Math.sin(angle + Math.PI/6));
+    this.ctx.stroke();
+    this.ctx.closePath();
+  }
+
   mouseMoveHandler(e: MouseEvent) {
     if (!this.clicked) return;
     if (!this.canvas || !this.ctx) return;
@@ -217,18 +242,15 @@ export class CreateShape {
       this.drawLine(e);
     } else if(this.selectedTool === "PENCIL") {
       this.drawPencil(e);
+    } else if(this.selectedTool === "ARROW") {
+      this.drawArrow(e);
     }
   }
 
   mouseUpHandler(e: MouseEvent) {
-    // to prevent from reloading the page
-    e.stopPropagation();
-    e.preventDefault();
-
     this.clicked = false;
     if (!this.canvas) return;
 
-    
     let shapes: Shape | null = null;
     
     const width = e.clientX - this.startX;
@@ -275,6 +297,16 @@ export class CreateShape {
         }
       }
       this.points = [];
+    } else if(this.selectedTool === "ARROW") {
+      shapes = {
+        shape: "ARROW",
+        shapeParams: {
+          x1: this.startX,
+          y1: this.startY,
+          x2: e.clientX,
+          y2: e.clientY
+        }
+      }
     }
 
     if (!shapes) return;

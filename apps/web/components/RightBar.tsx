@@ -1,4 +1,4 @@
-import { Circle, PencilIcon, PenLineIcon, RectangleHorizontalIcon } from "lucide-react";
+import { Circle, Minus, MoveUpRight, PencilIcon, RectangleHorizontalIcon } from "lucide-react";
 import { IconsButton } from "./IconsButton";
 import { Tool } from "./Canvas";
 
@@ -10,31 +10,38 @@ export function RightBar({
   setSelectedTool: (s: Tool) => void;
 }) {
   return (
-    <div className="fixed bottom-60 right-10 rounded-md bg-gray-900 py-10">
+    <div className="fixed bottom-60 right-10 rounded-md bg-gray-900 py-2">
       <div className="flex flex-col">
         <IconsButton
-          icon={<RectangleHorizontalIcon />}
+          icon={<RectangleHorizontalIcon className="w-6 h-6" />}
           onClick={() => {
             setSelectedTool("RECT");
           }}
           activated={selectedTool === "RECT"}
         />
         <IconsButton
-          icon={<Circle />}
+          icon={<Circle className="w-6 h-6" />}
           onClick={() => {
             setSelectedTool("CIRCLE");
           }}
           activated={selectedTool === "CIRCLE"}
         />
         <IconsButton
-          icon={<PenLineIcon />}
+          icon={<Minus className="w-6 h-6" />}
           onClick={() => {
             setSelectedTool("LINE");
           }}
           activated={selectedTool === "LINE"}
         />
         <IconsButton
-          icon={<PencilIcon />}
+          icon={<MoveUpRight className="w-6 h-6" />}
+          onClick={() => {
+            setSelectedTool("ARROW");
+          }}
+          activated={selectedTool === "ARROW"}
+        />
+        <IconsButton
+          icon={<PencilIcon className="w-6 h-6" />}
           onClick={() => {
             setSelectedTool("PENCIL");
           }}

@@ -47,4 +47,7 @@ enum shapeTypes {
   RECT
   CIRCLE
   PENCIL
+  TEXT
+  ARROW
+  ERASER
 }
