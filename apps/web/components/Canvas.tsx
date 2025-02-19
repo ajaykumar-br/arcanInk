@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { RightBar } from "./RightBar";
 import { CreateShape } from "@/draw/CreateShape";
+import ZoomBar from "./ZoomBar";
 
 export type Tool = "" | "RECT" | "LINE" | "CIRCLE" | "PENCIL" | "ARROW" | "ERASER"; 
 
@@ -22,7 +23,7 @@ export function Canvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const draw = new CreateShape(canvas, socket, roomId);
+    const draw = new CreateShape(canvas, socket, roomId); // create a new instance of CreateShape class
     setDrawingCanvas(draw);
 
     return () => {
@@ -33,6 +34,7 @@ export function Canvas({
   return (
     <div className="relative">
       <canvas ref={canvasRef} />
+      <ZoomBar />
       <RightBar selectedTool={selectedTool} setSelectedTool={setSelectedTool} />
     </div>
   );

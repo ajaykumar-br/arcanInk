@@ -2,37 +2,27 @@ import { Tool } from "@/components/Canvas";
 import { getExistingShapes } from "./http";
 
 export type Shape = {
-      shape: Tool;
-      shapeParams: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-      };
-    }
-  | {
-      shape: Tool;
-      shapeParams: {
-        x1: number;
-        x2: number;
-        y1: number;
-        y2: number;
-      };
-    }
-  | {
-      shape: Tool;
-      shapeParams: {
-        x: number;
-        y: number;
-        radius: number;
-      };
-    }
-  | {
-      shape: Tool;
-      shapeParams: {
-          points: { x: number; y: number }[];
-      };
-    };
+  id?: string;
+  shape: Tool;
+  shapeParams: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | {
+    x1: number;
+    x2: number;
+    y1: number;
+    y2: number;
+  } | {
+    x: number;
+    y: number;
+    radius: number;
+  } | {
+      points: { x: number; y: number }[];
+  }
+}
+  
 
 export class CreateShape {
   private canvas: HTMLCanvasElement;
@@ -45,6 +35,8 @@ export class CreateShape {
   private selectedTool: Tool = "";
   private isMouseHandlersInitialized = false;
   private points: {x: number, y: number}[] = []; // pencil points
+  private deleteShapes: boolean = false;
+  private deleteShapeId: Set<string> = new Set();
 
   socket: WebSocket;
 
@@ -64,15 +56,9 @@ export class CreateShape {
 
   destroy() {
     // remove mouse events
-    this.canvas.removeEventListener(
-      "mousedown",
-      this.mouseDownHandler.bind(this)
-    );
+    this.canvas.removeEventListener("mousedown", this.mouseDownHandler.bind(this));
     this.canvas.removeEventListener("mouseup", this.mouseUpHandler.bind(this));
-    this.canvas.removeEventListener(
-      "mousemove",
-      this.mouseMoveHandler.bind(this)
-    );
+    this.canvas.removeEventListener("mousemove", this.mouseMoveHandler.bind(this));
   }
 
   setTool(tool: Tool) {
@@ -89,6 +75,7 @@ export class CreateShape {
       const message = JSON.parse(e.data);
       if (message.type == "chat") {
         const parsedShape: Shape = {
+          id: message.id,
           shape: message.shape,
           shapeParams: JSON.parse(message.shapeParams),
         };
@@ -104,7 +91,7 @@ export class CreateShape {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.existingShapes.forEach((shape: Shape) => {
       this.ctx.strokeStyle = "white";
-      const { shape: tool, shapeParams } = shape;
+      const { shape: tool, shapeParams } = shape; // variable is tool type
       if (tool === "RECT" && "width" in shapeParams) {
         this.ctx.strokeRect(
           shapeParams.x,
@@ -127,7 +114,7 @@ export class CreateShape {
         this.ctx.moveTo(shapeParams.x1, shapeParams.y1);
         this.ctx.lineTo(shapeParams.x2, shapeParams.y2);
         this.ctx.stroke();
-      } else if(tool === "PENCIL" && "points" in shapeParams) {
+      } else if (tool === "PENCIL" && "points" in shapeParams) {
         const points = shapeParams.points;
         if(points.length < 2) return;
         this.ctx.beginPath();
@@ -137,8 +124,8 @@ export class CreateShape {
         points.forEach( point => this.ctx.lineTo(point.x, point.y));
         this.ctx.stroke();
         this.ctx.closePath();
-      } else if(tool === "ARROW" && "x2" in shapeParams) {
-        const arrowLength = 15;
+      } else if (tool === "ARROW" && "x2" in shapeParams) {
+        const arrowLength = 10;
         const angle = Math.atan2(shapeParams.y2 - shapeParams.y1, shapeParams.x2 - shapeParams.x1);
         this.ctx.beginPath();
         this.ctx.moveTo(shapeParams.x1, shapeParams.y1);
@@ -168,6 +155,8 @@ export class CreateShape {
 
     if(this.selectedTool === "PENCIL") {
       this.points.push({x:this.startX, y:this.startY})
+    } else if(this.selectedTool === "ERASER") {
+      this.deleteShapes = true;
     }
   }
 
@@ -209,7 +198,7 @@ export class CreateShape {
   }
 
   drawArrow(e: MouseEvent) {
-    const arrowLength = 15;
+    const arrowLength = 10;
     const angle = Math.atan2(e.clientY - this.startY, e.clientX - this.startX);
     const x2 = e.clientX;
     const y2 = e.clientY;
@@ -223,6 +212,86 @@ export class CreateShape {
     this.ctx.closePath();
   }
 
+  distanceToSegment(x: number, y: number, x1: number, y1: number, x2: number, y2: number): number {
+    const A = x - x1;
+    const B = y - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = 0;
+    if (lenSq !== 0) {
+      param = Math.max(0, Math.min(1, dot / lenSq));
+    }
+
+    const xx = x1 + param * C;
+    const yy = y1 + param * D;
+
+    const dx = x - xx;
+    const dy = y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  isPointInShape(x: number, y: number, shape: Shape) {
+    const { shape: tool, shapeParams: sp } = shape;
+    const ERASER_BUFFER = 5;
+
+    if(tool === "RECT" && "width" in sp) {
+      return (x >= sp.x && x <=sp.x + sp.width && y >= sp.y && y <= sp.y + sp.height);
+    } else if(tool === "CIRCLE" && "radius" in sp) {
+      const dx = x - sp.x;
+      const dy = y - sp.y;
+      return (dx * dx + dy * dy <= sp.radius * sp.radius);
+    } else if ((tool === "LINE" && "x2" in sp) || (tool === "ARROW" && "x2" in sp)) {
+      const { x1, y1, x2, y2 } = sp;
+      const minX = Math.min(x1, x2);
+      const maxX = Math.max(x1, x2);
+      const minY = Math.min(y1, y2);
+      const maxY = Math.max(y1, y2);
+
+      if (x < minX || x > maxX || y < minY || y > maxY) return false;
+
+      const A = x - x1;
+      const B = y - y1;
+      const C = x2 - x1;
+      const D = y2 - y1;
+
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      let param = -1;
+
+      if (lenSq !== 0) {
+        param = dot / lenSq;
+        param = Math.max(0, Math.min(1, param));
+      }
+
+      const xx = x1 + param * C;
+      const yy = y1 + param * D;
+
+      const dx = x - xx;
+      const dy = y - yy;
+      const distanceSq = dx * dx + dy * dy;
+
+      return distanceSq <= ERASER_BUFFER * ERASER_BUFFER;
+    } else if(tool === "PENCIL" && "points" in sp) {
+      const { points } = sp;
+      const ERASER_BUFFER = 10;
+
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        
+        if(!p1 || !p2) continue;
+
+        if (this.distanceToSegment(x, y, p1.x, p1.y, p2.x, p2.y) <= ERASER_BUFFER) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
   mouseMoveHandler(e: MouseEvent) {
     if (!this.clicked) return;
     if (!this.canvas || !this.ctx) return;
@@ -233,7 +302,7 @@ export class CreateShape {
     // Clear previous drawings
     this.reDraw();
     
-    // Draw the rectangle
+    // Draw shapes
     if (this.selectedTool === "RECT") {
       this.drawRect(e);
     } else if(this.selectedTool === "CIRCLE") {
@@ -244,7 +313,28 @@ export class CreateShape {
       this.drawPencil(e);
     } else if(this.selectedTool === "ARROW") {
       this.drawArrow(e);
+    } else if(this.selectedTool === "ERASER") {
+      const deleted: string[] = [];
+      [...this.existingShapes].reverse().forEach((shape) => {
+        if(shape.id && this.isPointInShape(x, y, shape)) {
+          deleted.push(shape.id);
+          this.deleteShapeId.add(shape.id);
+          this.existingShapes = this.existingShapes.filter((s) => s.id !== shape.id);
+        }
+      });
+      this.deleteViaSocket();
     }
+  }
+
+  deleteViaSocket() {
+    if(!this.deleteShapeId.size) return;
+
+    this.socket.send(JSON.stringify({
+      type: "erase",
+      shapeIds: Array.from(this.deleteShapeId),
+      roomId: this.roomId
+    }));
+    this.deleteShapeId.clear();
   }
 
   mouseUpHandler(e: MouseEvent) {
@@ -307,6 +397,10 @@ export class CreateShape {
           y2: e.clientY
         }
       }
+    } else if(this.selectedTool === "ERASER") {
+      this.deleteViaSocket();
+      this.reDraw();
+      return;
     }
 
     if (!shapes) return;
@@ -320,7 +414,7 @@ export class CreateShape {
         type: "chat",
         shape: shapes.shape,
         shapeParams: JSON.stringify(shapes.shapeParams),
-        roomId: this.roomId,
+        roomId: this.roomId
       })
     );
   }

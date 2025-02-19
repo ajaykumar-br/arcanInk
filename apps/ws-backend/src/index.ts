@@ -64,7 +64,6 @@ wss.on("connection", (ws, request) => {
       user.rooms = user.rooms.filter((x) => x === parsedData.room);
     }
     if (parsedData.type === "chat") {
-      console.log(parsedData);
       const roomId = parsedData.roomId;
       const shape = parsedData.shape.toUpperCase();
       const shapeParams = parsedData.shapeParams;
@@ -95,6 +94,31 @@ wss.on("connection", (ws, request) => {
             })
           );
         }
+      });
+    }
+    if (parsedData.type === "erase") {
+      const roomId = parsedData.roomId;
+      const shapesIds = parsedData.shapeIds;
+      
+      // delete from db
+      // TODO: should I check if the shape is in the room?
+      const deletedShapes = await prisma.canvas.deleteMany({
+        where: {
+          id: {
+            in: shapesIds
+          },
+          roomId: Number(roomId)
+        }
+      });
+      
+      const roomUsers = users.filter(user => user.rooms.includes(roomId))
+      
+      roomUsers.map((user) => {
+        ws.send(JSON.stringify({
+          type: "erase",
+          shapeIds: shapesIds,
+          roomId
+        }))
       });
     }
   });
