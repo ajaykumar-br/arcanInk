@@ -11,6 +11,7 @@ COPY ./apps/ws-backend/package.json ./apps/ws-backend/package.json
 COPY ./apps/ws-backend/tsconfig.json ./apps/ws-backend/tsconfig.json
 COPY ./apps/ws-backend/src ./apps/ws-backend/src
 
+RUN npm install -g pnpm rimraf typescript ts-node
 RUN pnpm install
 RUN pnpm db:generate
 

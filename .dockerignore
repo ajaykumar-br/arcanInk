@@ -1,0 +1,11 @@
+node_modules
+.next
+.turbo
+.env
+.env.local
+.env.development.local
+.env.test.local
+.git
+.gitignore
+**/node_modules
+**/.next
