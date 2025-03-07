@@ -1,5 +1,5 @@
 {
-  "name": "@repo/db",
+  "name": "@ajaykumar_br/db",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -14,7 +14,7 @@
   "license": "ISC",
   "devDependencies": {
     "prisma": "^6.2.1",
-    "@repo/typescript-config": "workspace:*"
+    "@ajaykumar_br/typescript-config": "workspace:*"
   },
   "dependencies": {
     "@prisma/client": "6.2.1"

@@ -20,10 +20,10 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@repo/backend-common": "workspace:*",
-    "@repo/common": "workspace:*",
-    "@repo/db": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@ajaykumar_br/backend-common": "workspace:*",
+    "@ajaykumar_br/common": "workspace:*",
+    "@ajaykumar_br/db": "workspace:*",
+    "@ajaykumar_br/typescript-config": "workspace:*",
     "@types/express": "^5.0.0"
   }
 }

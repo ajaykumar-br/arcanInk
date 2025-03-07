@@ -1,5 +1,5 @@
 {
-  "name": "@repo/backend-common",
+  "name": "@ajaykumar_br/backend-common",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -14,6 +14,6 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^22.10.7",
-    "@repo/typescript-config": "workspace:*"
+    "@ajaykumar_br/typescript-config": "workspace:*"
   }
 }

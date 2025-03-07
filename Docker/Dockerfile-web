@@ -1,0 +1,19 @@
+FROM node:20-alpine
+WORKDIR /usr/src/app
+
+COPY ./packages ./packages
+COPY ./pnpm-lock.yaml ./pnpm-lock.yaml
+COPY ./pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY ./turbo.json ./turbo.json
+COPY ./package.json ./package.json
+
+COPY ./apps/web/package.json ./apps/web/package.json
+COPY ./apps/web/tsconfig.json ./apps/web/tsconfig.json
+COPY ./apps/web/src ./apps/web/src
+
+RUN pnpm install
+RUN pnpm db:generate
+
+EXPOSE 8080
+
+CMD [ "pnpm", "start:web" ]

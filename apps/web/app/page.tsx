@@ -1,12 +1,6 @@
-import { Button } from "@repo/ui/button";
-import { Card } from "@repo/ui/card";
-import {
-  Share2,
-  Users2,
-  Sparkles,
-  Github,
-  Download,
-} from "lucide-react";
+import { Button } from "@ajaykumar_br/ui/button";
+import { Card } from "@ajaykumar_br/ui/card";
+import { Share2, Users2, Sparkles, Github, Download } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -75,7 +69,7 @@ export default function Home() {
               </div>
               <div className="mt-4 text-muted-foreground">
                 Multiple users can edit the same canvas simultaneously. See
-                who's drawing what in real-time.
+                who&apos;s drawing what in real-time.
               </div>
             </Card>
 
@@ -108,7 +102,11 @@ export default function Home() {
                 diagrams and sketches.
               </div>
               <div className="mt-10 flex items-center justify-center gap-x-6">
-                <Button size="lg" variant="secondary" className="flex justify-center items-center h-12 px-6">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="flex justify-center items-center h-12 px-6"
+                >
                   Open Canvas
                 </Button>
                 <Button

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@repo/ui/button";
+import { Button } from "@ajaykumar_br/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -11,13 +11,15 @@ export function Navbar() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    setIsLoggedIn(true);
+    if (token) {
+      setIsLoggedIn(true);
+    }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
-    router.push('/');
+    router.push("/");
   };
 
   return (

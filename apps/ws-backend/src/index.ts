@@ -1,7 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { JWT_SECRET } from "@repo/backend-common/config";
-import { prisma } from "@repo/db/prisma";
+import { JWT_SECRET } from "@ajaykumar_br/backend-common/config";
+import { prisma } from "@ajaykumar_br/db/prisma";
 
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -99,26 +99,28 @@ wss.on("connection", (ws, request) => {
     if (parsedData.type === "erase") {
       const roomId = parsedData.roomId;
       const shapesIds = parsedData.shapeIds;
-      
+
       // delete from db
       // TODO: should I check if the shape is in the room?
       const deletedShapes = await prisma.canvas.deleteMany({
         where: {
           id: {
-            in: shapesIds
+            in: shapesIds,
           },
-          roomId: Number(roomId)
-        }
+          roomId: Number(roomId),
+        },
       });
-      
-      const roomUsers = users.filter(user => user.rooms.includes(roomId))
-      
+
+      const roomUsers = users.filter((user) => user.rooms.includes(roomId));
+
       roomUsers.map((user) => {
-        ws.send(JSON.stringify({
-          type: "erase",
-          shapeIds: shapesIds,
-          roomId
-        }))
+        ws.send(
+          JSON.stringify({
+            type: "erase",
+            shapeIds: shapesIds,
+            roomId,
+          })
+        );
       });
     }
   });

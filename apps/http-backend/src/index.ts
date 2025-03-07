@@ -1,7 +1,11 @@
 import express from "express";
-import { JWT_SECRET } from "@repo/backend-common/config";
-import { RoomSchema, SignInSchema, SignUpSchema } from "@repo/common/types";
-import { prisma } from "@repo/db/prisma";
+import { JWT_SECRET } from "@ajaykumar_br/backend-common/config";
+import {
+  RoomSchema,
+  SignInSchema,
+  SignUpSchema,
+} from "@ajaykumar_br/common/types";
+import { prisma } from "@ajaykumar_br/db/prisma";
 import jwt from "jsonwebtoken";
 import { CustomRequest, middleware } from "./middleware";
 import cors from "cors";

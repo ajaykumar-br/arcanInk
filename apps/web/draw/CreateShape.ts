@@ -405,8 +405,6 @@ export class CreateShape {
 
     if (!shapes) return;
 
-    console.log(shapes);
-
     this.existingShapes.push(shapes);
 
     this.socket.send(
