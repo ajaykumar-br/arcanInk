@@ -1,84 +1,144 @@
-# Turborepo starter
+# ArcanInk ✏️
 
-This is an official starter Turborepo.
+**Real-time collaborative drawing — draw together, instantly, from anywhere.**
 
-## Using this example
+ArcanInk is a multiplayer canvas app where multiple users can sketch simultaneously on a shared board with low-latency synchronization. Think of it as a lightweight Excalidraw clone, built from scratch with a production-grade monorepo architecture.
 
-Run the following command:
+> 📂 **[Report a Bug](https://github.com/ajaykumar-br/arcanInk/issues)**
 
-```sh
-npx create-turbo@latest
-```
+## ✨ Features
 
-## What's inside?
+- **Real-time multi-user canvas** — multiple users draw simultaneously with sub-100ms sync via WebSocket
+- **Low-latency stroke streaming** — drawing events are broadcast instantly to all connected clients
+- **Persistent room state** — canvas state is maintained across reconnections
+- **Responsive UI** — works across desktop and tablet viewports
+- **Monorepo architecture** — frontend and backend share utilities via a Turborepo workspace
 
-This Turborepo includes the following packages/apps:
+---
 
-### Apps and Packages
+## 🏗️ Architecture
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@ajaykumar_br/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@ajaykumar_br/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@ajaykumar_br/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+ArcanInk is structured as a **Turborepo monorepo** with separate frontend and backend apps sharing a common packages layer.
 
 ```
-cd my-turborepo
-pnpm build
+arcanInk/
+├── apps/
+│   ├── web/          # Next.js frontend — canvas UI, WebSocket client
+│   └── server/       # Node.js + WebSocket server — room & broadcast logic
+├── packages/
+│   ├── ui/           # Shared React component library (@ajaykumar_br/ui)
+│   ├── eslint-config/ # Shared ESLint rules
+│   └── typescript-config/ # Shared tsconfig
+├── Docker/           # Dockerfiles for containerized deployment
+└── .github/workflows/ # CI/CD pipeline via GitHub Actions
 ```
 
-### Develop
+### How real-time sync works
 
-To develop all apps and packages, run the following command:
+1. A user draws a stroke on the canvas — the client captures pointer events and converts them to serialized shape data.
+2. The stroke is sent over a **WebSocket connection** to the server.
+3. The server broadcasts the stroke to all other clients in the same room.
+4. Each receiving client renders the incoming stroke on their local canvas in real time.
 
+This approach keeps the server stateless per-stroke while still enabling seamless multi-user collaboration.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js, TypeScript, CSS |
+| Real-time | WebSocket (ws) |
+| Backend | Node.js |
+| Monorepo | Turborepo, pnpm workspaces |
+| Containerization | Docker |
+| CI/CD | GitHub Actions |
+| Language | TypeScript (100% across all packages) |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm 8+
+
+### Installation
+
+```bash
+# Clone the repo
+git clone https://github.com/ajaykumar-br/arcanInk.git
+cd arcanInk
+
+# Install dependencies across all workspaces
+pnpm install
 ```
-cd my-turborepo
+
+### Development
+
+```bash
+# Run all apps in development mode
 pnpm dev
 ```
 
-### Remote Caching
+This starts both the Next.js frontend and the WebSocket server concurrently via Turborepo's task pipeline.
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+### Production Build
 
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
+```bash
+pnpm build
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+### Docker
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
+```bash
+# Build and run with Docker
+docker compose -f Docker/docker-compose.yml up --build
 ```
-npx turbo link
-```
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+## ⚙️ CI/CD
 
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+This project uses **GitHub Actions** for automated builds and deployments. On every push to `main`:
+
+- Dependencies are installed via pnpm
+- All packages are type-checked and linted
+- Build artifacts are generated across the monorepo
+
+See `.github/workflows/` for the full pipeline configuration.
+
+---
+
+## 📁 Monorepo Design
+
+ArcanInk uses **Turborepo** to manage the build pipeline across multiple apps and shared packages. Key benefits:
+
+- **Shared UI components** — the `@ajaykumar_br/ui` package is consumed by both apps, eliminating duplicated component logic
+- **Unified linting and TypeScript config** — consistent code standards enforced across all workspaces
+- **Parallel task execution** — Turborepo runs builds, type checks, and lint in parallel, cutting CI time significantly
+- **Remote caching ready** — configured to support Vercel Remote Cache for faster team builds
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Persistent canvas storage (save/load boards)
+- [ ] User cursors with name labels
+- [ ] Shape tools (rectangles, circles, arrows)
+- [ ] Export canvas as PNG/SVG
+- [ ] Authentication and private rooms
+
+---
+
+## 📄 License
+
+MIT — see [LICENSE](./LICENSE) for details.
+
+---
+
+## 🤝 Author
+
+**Ajay Kumar B R** · [LinkedIn](https://linkedin.com/in/Ajay-Kumar-BR) · [GitHub](https://github.com/ajaykumar-br)
