@@ -1,3 +1,6 @@
+# Credentials (POSTGRES_USER, POSTGRES_PASSWORD, JWT_SECRET) have no defaults on purpose:
+# compose refuses to start until they are set in .env. See .env.example.
+#
 # Run everything:  docker compose up --build
 # Then open http://localhost:3000
 services:
@@ -5,8 +8,8 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (openssl rand -hex 24)}
       POSTGRES_DB: ${POSTGRES_DB:-arcanink}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -24,7 +27,7 @@ services:
     command: ["pnpm", "--filter", "@ajaykumar_br/db", "exec", "prisma", "migrate", "deploy"]
     working_dir: /usr/src/app
     environment:
-      DATABASE_URL: &database_url postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-arcanink}
+      DATABASE_URL: &database_url postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:-arcanink}
     depends_on:
       postgres:
         condition: service_healthy

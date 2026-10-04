@@ -97,7 +97,7 @@ pnpm build
 ### Docker
 
 ```bash
-cp .env.example .env     # then set JWT_SECRET (openssl rand -hex 32)
+cp .env.example .env     # then fill in POSTGRES_PASSWORD and JWT_SECRET (see the file for how to generate them)
 docker compose up --build
 ```
 
@@ -110,9 +110,12 @@ There is no CI/CD pipeline (nothing here consumes GitHub Actions minutes). To ru
 use an always-free VM and the same compose file:
 
 1. Create an **Oracle Cloud Always Free** VM (Ubuntu, Ampere A1) and install Docker.
-2. `git clone` the repo, `cp .env.example .env`, and set `JWT_SECRET` (required) plus
+2. `git clone` the repo, `cp .env.example .env`, and set `POSTGRES_PASSWORD` and `JWT_SECRET` (both required) plus
    `NEXT_PUBLIC_HTTP_BACKEND_URL` / `NEXT_PUBLIC_WS_URL` to the VM's public address.
-3. `docker compose up -d --build`, and open ports 3000, 3001 and 8080 in the VM's firewall.
+3. Lock the file down: `chmod 600 .env`. Keep it on the server only (never in git); credentials have no
+   defaults, so compose won't start without them. If you later move to a managed host, put the same
+   values in its secrets store instead of a file.
+4. `docker compose up -d --build`, and open ports 3000, 3001 and 8080 in the VM's firewall.
 
 If the site is served over HTTPS (needed on most free domains), browsers block plain `ws://`;
 put a TLS reverse proxy such as Caddy in front and use `wss://` / `https://` URLs.
