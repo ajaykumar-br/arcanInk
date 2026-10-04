@@ -10,6 +10,11 @@ ArcanInk is a multiplayer canvas app where multiple users can sketch simultaneou
 
 - **Real-time multi-user canvas** — multiple users draw simultaneously with sub-100ms sync via WebSocket
 - **Low-latency stroke streaming** — drawing events are broadcast instantly to all connected clients
+- **Select tool (default)** — click to select, drag to move, `Delete` to remove; double-click empty space to type text, double-click text to edit it
+- **Freehand pen** — smoothed, pressure-sensitive strokes (pen, touch and mouse)
+- **Zoom & pan** — buttons or `Ctrl/⌘ + wheel` / pinch to zoom, wheel or empty-space drag to pan
+- **Undo / redo** — `Ctrl/⌘ + Z`, `Ctrl/⌘ + Shift + Z`
+- **Dark / light mode** — dark by default
 - **Persistent room state** — canvas state is maintained across reconnections
 - **Responsive UI** — works across desktop and tablet viewports
 - **Monorepo architecture** — frontend and backend share utilities via a Turborepo workspace
@@ -29,8 +34,7 @@ arcanInk/
 │   ├── ui/           # Shared React component library (@ajaykumar_br/ui)
 │   ├── eslint-config/ # Shared ESLint rules
 │   └── typescript-config/ # Shared tsconfig
-├── Docker/           # Dockerfiles for containerized deployment
-└── .github/workflows/ # CI/CD pipeline via GitHub Actions
+└── Docker/           # Dockerfiles for containerized deployment (see docker-compose.yml)
 ```
 
 ### How real-time sync works
@@ -53,7 +57,6 @@ This approach keeps the server stateless per-stroke while still enabling seamles
 | Backend | Node.js |
 | Monorepo | Turborepo, pnpm workspaces |
 | Containerization | Docker |
-| CI/CD | GitHub Actions |
 | Language | TypeScript (100% across all packages) |
 
 ---
@@ -94,21 +97,25 @@ pnpm build
 ### Docker
 
 ```bash
-# Build and run with Docker
-docker compose -f Docker/docker-compose.yml up --build
+cp .env.example .env     # then set JWT_SECRET (openssl rand -hex 32)
+docker compose up --build
 ```
 
----
+This starts Postgres, applies the Prisma migrations, then runs the HTTP API (`:3001`), the
+WebSocket server (`:8080`) and the web app (`:3000`). Open http://localhost:3000.
 
-## ⚙️ CI/CD
+### Free deployment
 
-This project uses **GitHub Actions** for automated builds and deployments. On every push to `main`:
+There is no CI/CD pipeline (nothing here consumes GitHub Actions minutes). To run it for free,
+use an always-free VM and the same compose file:
 
-- Dependencies are installed via pnpm
-- All packages are type-checked and linted
-- Build artifacts are generated across the monorepo
+1. Create an **Oracle Cloud Always Free** VM (Ubuntu, Ampere A1) and install Docker.
+2. `git clone` the repo, `cp .env.example .env`, and set `JWT_SECRET` (required) plus
+   `NEXT_PUBLIC_HTTP_BACKEND_URL` / `NEXT_PUBLIC_WS_URL` to the VM's public address.
+3. `docker compose up -d --build`, and open ports 3000, 3001 and 8080 in the VM's firewall.
 
-See `.github/workflows/` for the full pipeline configuration.
+If the site is served over HTTPS (needed on most free domains), browsers block plain `ws://`;
+put a TLS reverse proxy such as Caddy in front and use `wss://` / `https://` URLs.
 
 ---
 

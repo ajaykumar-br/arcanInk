@@ -50,4 +50,5 @@ enum shapeTypes {
   TEXT
   ARROW
   ERASER
+  FREEHAND
 }

@@ -33,7 +33,7 @@ export default function Room() {
   };
   return (
     <div className="w-screen h-screen flex justify-center items-center bg-accent">
-      <div className="border border-gray-300 rounded-md w-[400px] bg-white shadow-lg">
+      <div className="border border-border rounded-md w-[400px] bg-card text-card-foreground shadow-lg">
         <h1 className="text-4xl font-semibold text-white bg-primary flex justify-center items-center h-[100px] rounded-t-md">
           AracanInk Room
         </h1>
@@ -42,7 +42,7 @@ export default function Room() {
             <input
               type="text"
               placeholder="Room Name"
-              className="w-full p-2 border border-gray-300 rounded"
+              className="w-full p-2 border border-input bg-background text-foreground rounded"
               {...register("name", { required: true })}
             />
             {errors.name && <span>errors.slug.message</span>}

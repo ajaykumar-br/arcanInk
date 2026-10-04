@@ -54,7 +54,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
         </div>
       </div>
       <div className="w-screen h-screen flex justify-center items-center bg-accent">
-        <div className="border border-gray-300 rounded-md w-[400px] bg-white shadow-lg">
+        <div className="border border-border rounded-md w-[400px] bg-card text-card-foreground shadow-lg">
           <h1
             className={`text-4xl font-semibold text-white flex justify-center items-center h-[100px] rounded-t-md ${isSignin ? "bg-green-500" : "bg-red-500"}`}
           >
@@ -66,7 +66,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                 type="text"
                 {...register("username", { required: "email required" })}
                 placeholder="Email"
-                className="w-full p-2 border border-gray-300 rounded"
+                className="w-full p-2 border border-input bg-background text-foreground rounded"
               />
               {errors.username && (
                 <p className="text-red-500">{errors.username.message}</p>
@@ -78,7 +78,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                   type="text"
                   {...register("name", { required: "name required" })}
                   placeholder="name"
-                  className="w-full p-2 border border-gray-300 rounded"
+                  className="w-full p-2 border border-input bg-background text-foreground rounded"
                 />
                 {errors.name && (
                   <p className="text-red-500">{errors.name.message}</p>
@@ -90,7 +90,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                 type="password"
                 {...register("password", { required: "password required" })}
                 placeholder="password"
-                className="w-full p-2 border border-gray-300 rounded"
+                className="w-full p-2 border border-input bg-background text-foreground rounded"
               />
               {errors.password && (
                 <p className="text-red-500">{errors.password.message}</p>
@@ -111,7 +111,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
               </Button>
             </div>
             <div className="pt-4 text-center">
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 {isSignin
                   ? "Don't have an account? |"
                   : "Already have an account? |"}
