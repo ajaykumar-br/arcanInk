@@ -10,6 +10,11 @@ ArcanInk is a multiplayer canvas app where multiple users can sketch simultaneou
 
 - **Real-time multi-user canvas** — multiple users draw simultaneously with sub-100ms sync via WebSocket
 - **Low-latency stroke streaming** — drawing events are broadcast instantly to all connected clients
+- **Select tool (default)** — click to select, drag to move, `Delete` to remove; double-click empty space to type text, double-click text to edit it
+- **Freehand pen** — smoothed, pressure-sensitive strokes (pen, touch and mouse)
+- **Zoom & pan** — buttons or `Ctrl/⌘ + wheel` / pinch to zoom, wheel or empty-space drag to pan
+- **Undo / redo** — `Ctrl/⌘ + Z`, `Ctrl/⌘ + Shift + Z`
+- **Dark / light mode** — dark by default
 - **Persistent room state** — canvas state is maintained across reconnections
 - **Responsive UI** — works across desktop and tablet viewports
 - **Monorepo architecture** — frontend and backend share utilities via a Turborepo workspace
@@ -92,7 +97,7 @@ pnpm build
 ### Docker
 
 ```bash
-cp .env.example .env     # optional: override passwords / JWT secret
+cp .env.example .env     # then set JWT_SECRET (openssl rand -hex 32)
 docker compose up --build
 ```
 
@@ -105,7 +110,7 @@ There is no CI/CD pipeline (nothing here consumes GitHub Actions minutes). To ru
 use an always-free VM and the same compose file:
 
 1. Create an **Oracle Cloud Always Free** VM (Ubuntu, Ampere A1) and install Docker.
-2. `git clone` the repo, `cp .env.example .env`, and set `JWT_SECRET` plus
+2. `git clone` the repo, `cp .env.example .env`, and set `JWT_SECRET` (required) plus
    `NEXT_PUBLIC_HTTP_BACKEND_URL` / `NEXT_PUBLIC_WS_URL` to the VM's public address.
 3. `docker compose up -d --build`, and open ports 3000, 3001 and 8080 in the VM's firewall.
 

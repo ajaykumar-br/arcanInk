@@ -152,6 +152,26 @@ wss.on("connection", (ws, request) => {
         return;
       }
 
+      if (parsedData.type === "update") {
+        const id = Number(parsedData.id);
+        const shapeParams = parsedData.shapeParams;
+        if (!Number.isInteger(id) || typeof shapeParams !== "string") {
+          return send(ws, { type: "error", message: "Invalid update" });
+        }
+        try {
+          JSON.parse(shapeParams);
+        } catch {
+          return send(ws, { type: "error", message: "Invalid shape params" });
+        }
+        // scoped to the room so a shape from another room can't be modified
+        const { count } = await prisma.canvas.updateMany({
+          where: { id, roomId: roomNumber },
+          data: { shapeParams },
+        });
+        if (count) broadcast(roomId, { type: "update", id, shapeParams, roomId });
+        return;
+      }
+
       if (parsedData.type === "erase") {
         if (!Array.isArray(parsedData.shapeIds)) return;
         const requested = parsedData.shapeIds

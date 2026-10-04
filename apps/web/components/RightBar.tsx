@@ -1,4 +1,4 @@
-import { Circle, EraserIcon, Minus, MoveUpRight, PencilIcon, PenToolIcon, RectangleHorizontalIcon } from "lucide-react";
+import { MousePointer2Icon, TypeIcon, Circle, EraserIcon, Minus, MoveUpRight, PencilIcon, PenToolIcon, RectangleHorizontalIcon } from "lucide-react";
 import { IconsButton } from "./IconsButton";
 import { Tool } from "./Canvas";
 
@@ -10,8 +10,15 @@ export function RightBar({
   setSelectedTool: (s: Tool) => void;
 }) {
   return (
-    <div className="fixed bottom-60 right-10 rounded-md bg-card border border-border py-2">
+    <div className="fixed bottom-24 right-10 rounded-md bg-card border border-border py-2">
       <div className="flex flex-col">
+        <IconsButton
+          icon={<MousePointer2Icon className="w-4 h-4 cursor-pointer" />}
+          onClick={() => {
+            setSelectedTool("SELECT");
+          }}
+          activated={selectedTool === "SELECT"}
+        />
         <IconsButton
           icon={<RectangleHorizontalIcon className="w-4 h-4 cursor-pointer" />}
           onClick={() => {
@@ -53,6 +60,13 @@ export function RightBar({
             setSelectedTool("FREEHAND");
           }}
           activated={selectedTool === "FREEHAND"}
+        />
+        <IconsButton
+          icon={<TypeIcon className="w-4 h-4 cursor-pointer" />}
+          onClick={() => {
+            setSelectedTool("TEXT");
+          }}
+          activated={selectedTool === "TEXT"}
         />
         <IconsButton
           icon={<EraserIcon className="w-4 h-4 cursor-pointer" />}
