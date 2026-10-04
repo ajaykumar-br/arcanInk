@@ -4,6 +4,7 @@ import { Button } from "@ajaykumar_br/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -23,7 +24,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm fixed w-full z-10">
+    <nav className="bg-background border-b border-border shadow-sm fixed w-full z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -33,10 +34,11 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             {isLoggedIn ? (
               <Button
                 onClick={handleLogout}
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-foreground px-3 py-2 rounded-md text-sm font-medium"
                 variant="secondary"
                 size="sm"
               >
@@ -46,13 +48,13 @@ export function Navbar() {
               <>
                 <Link
                   href="/signin"
-                  className="text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:bg-green-400 hover:text-white"
+                  className="text-foreground px-3 py-2 rounded-md text-sm font-medium hover:bg-green-400 hover:text-white"
                 >
                   Login
                 </Link>
                 <Link
                   href="/signup"
-                  className="text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:bg-red-400 hover:text-white"
+                  className="text-foreground px-3 py-2 rounded-md text-sm font-medium hover:bg-red-400 hover:text-white"
                 >
                   Register
                 </Link>

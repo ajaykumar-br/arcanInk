@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { RightBar } from "./RightBar";
 import { CreateShape } from "@/draw/CreateShape";
 import ZoomBar from "./ZoomBar";
+import { useTheme } from "./ThemeProvider";
 
-export type Tool = "" | "RECT" | "LINE" | "CIRCLE" | "PENCIL" | "ARROW" | "ERASER"; 
+export type Tool = "" | "RECT" | "LINE" | "CIRCLE" | "PENCIL" | "ARROW" | "ERASER" | "FREEHAND"; 
 
 export function Canvas({
   roomId,
@@ -15,10 +16,15 @@ export function Canvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [drawingCanvas, setDrawingCanvas] = useState<CreateShape>();
   const [selectedTool, setSelectedTool] = useState<Tool>("RECT");
+  const { theme } = useTheme();
 
   useEffect(() => {
     drawingCanvas?.setTool(selectedTool);
   }, [drawingCanvas, selectedTool]);
+
+  useEffect(() => {
+    drawingCanvas?.setTheme(theme);
+  }, [drawingCanvas, theme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -33,7 +39,7 @@ export function Canvas({
 
   return (
     <div className="relative">
-      <canvas ref={canvasRef} />
+      <canvas ref={canvasRef} className="touch-none" />
       <ZoomBar />
       <RightBar selectedTool={selectedTool} setSelectedTool={setSelectedTool} />
     </div>

@@ -1,8 +1,11 @@
 import { Tool } from "@/components/Canvas";
+import getStroke from "perfect-freehand";
+import type { Theme } from "@/components/ThemeProvider";
 import { getExistingShapes } from "./http";
 
 export type Shape = {
-  id?: string;
+  id?: number | string;
+  clientId?: string; // set on shapes drawn locally until the server echo assigns an id
   shape: Tool;
   shapeParams: {
     x: number;
@@ -19,10 +22,18 @@ export type Shape = {
     y: number;
     radius: number;
   } | {
-      points: { x: number; y: number }[];
+      points: { x: number; y: number; pressure?: number }[];
+      size?: number;
   }
 }
   
+
+const THEME_COLORS: Record<Theme, { background: string; ink: string }> = {
+  dark: { background: "#232329", ink: "#ffffff" },
+  light: { background: "#ffffff", ink: "#1b1b1f" },
+};
+
+const FREEHAND_SIZE = 4;
 
 export class CreateShape {
   private canvas: HTMLCanvasElement;
@@ -34,9 +45,12 @@ export class CreateShape {
   private startY = 0;
   private selectedTool: Tool = "";
   private isMouseHandlersInitialized = false;
-  private points: {x: number, y: number}[] = []; // pencil points
+  private points: {x: number, y: number, pressure?: number}[] = []; // pencil / freehand points
+  private theme: Theme = "dark";
+  private activePointerId: number | null = null;
+  private usesRealPressure = false;
   private deleteShapes: boolean = false;
-  private deleteShapeId: Set<string> = new Set();
+  private deleteShapeId: Set<number | string> = new Set();
 
   socket: WebSocket;
 
@@ -55,10 +69,42 @@ export class CreateShape {
   }
 
   destroy() {
-    // remove mouse events
-    this.canvas.removeEventListener("mousedown", this.mouseDownHandler.bind(this));
-    this.canvas.removeEventListener("mouseup", this.mouseUpHandler.bind(this));
-    this.canvas.removeEventListener("mousemove", this.mouseMoveHandler.bind(this));
+    // remove pointer events
+    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
+    this.canvas.removeEventListener("pointerup", this.onPointerUp);
+    this.canvas.removeEventListener("pointercancel", this.onPointerUp);
+    this.canvas.removeEventListener("pointermove", this.mouseMoveHandler);
+  }
+
+  setTheme(theme: Theme) {
+    this.theme = theme;
+    this.reDraw();
+  }
+
+  private get ink() {
+    return THEME_COLORS[this.theme].ink;
+  }
+
+  // Smoothed, pressure-aware outline of a stroke rendered as a filled path.
+  private drawFreehand(points: { x: number; y: number; pressure?: number }[], size = FREEHAND_SIZE, complete = true) {
+    if (points.length === 0) return;
+    const hasPressure = points.some((p) => p.pressure !== undefined);
+    const outline = getStroke(
+      points.map((p) => [p.x, p.y, p.pressure ?? 0.5]),
+      { size, thinning: 0.5, smoothing: 0.5, streamline: 0.5, simulatePressure: !hasPressure, last: complete }
+    );
+    if (outline.length < 2) return;
+    const path = new Path2D();
+    const first = outline[0]!;
+    path.moveTo(first[0]!, first[1]!);
+    for (let i = 0; i < outline.length; i++) {
+      const a = outline[i]!;
+      const b = outline[(i + 1) % outline.length]!;
+      path.quadraticCurveTo(a[0]!, a[1]!, (a[0]! + b[0]!) / 2, (a[1]! + b[1]!) / 2);
+    }
+    path.closePath();
+    this.ctx.fillStyle = this.ink;
+    this.ctx.fill(path);
   }
 
   setTool(tool: Tool) {
@@ -66,8 +112,18 @@ export class CreateShape {
   }
 
   async init() {
-    this.existingShapes = await getExistingShapes(this.roomId);
+    const fetched = await getExistingShapes(this.roomId);
+    // Shapes can arrive over the socket (or be drawn) while the request is in flight; keep them.
+    const known = new Set(fetched.map((s) => String(s.id)));
+    const arrivedMeanwhile = this.existingShapes.filter((s) => s.id === undefined || !known.has(String(s.id)));
+    this.existingShapes = [...fetched, ...arrivedMeanwhile];
     this.reDraw();
+  }
+
+  private send(payload: object) {
+    if (this.socket.readyState !== WebSocket.OPEN) return false;
+    this.socket.send(JSON.stringify(payload));
+    return true;
   }
 
   initHandlers() {
@@ -79,18 +135,33 @@ export class CreateShape {
           shape: message.shape,
           shapeParams: JSON.parse(message.shapeParams),
         };
-        this.existingShapes.push(parsedShape);
+        // our own shape coming back: give the local copy its server id instead of drawing it twice
+        const local = message.clientId
+          ? this.existingShapes.find((s) => s.clientId === message.clientId)
+          : undefined;
+        if (local) {
+          local.id = message.id;
+          delete local.clientId;
+        } else if (!this.existingShapes.some((s) => s.id !== undefined && String(s.id) === String(message.id))) {
+          this.existingShapes.push(parsedShape);
+        }
         this.reDraw();
+      } else if (message.type == "erase") {
+        const erased = new Set<string>((message.shapeIds as (number | string)[]).map(String));
+        this.existingShapes = this.existingShapes.filter((s) => s.id === undefined || !erased.has(String(s.id)));
+        this.reDraw();
+      } else if (message.type == "error") {
+        console.error("Server error:", message.message);
       }
     };
   }
 
   reDraw() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.fillStyle = "#232329";
+    this.ctx.fillStyle = THEME_COLORS[this.theme].background;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.existingShapes.forEach((shape: Shape) => {
-      this.ctx.strokeStyle = "white";
+      this.ctx.strokeStyle = this.ink;
       const { shape: tool, shapeParams } = shape; // variable is tool type
       if (tool === "RECT" && "width" in shapeParams) {
         this.ctx.strokeRect(
@@ -124,6 +195,8 @@ export class CreateShape {
         points.forEach( point => this.ctx.lineTo(point.x, point.y));
         this.ctx.stroke();
         this.ctx.closePath();
+      } else if (tool === "FREEHAND" && "points" in shapeParams) {
+        this.drawFreehand(shapeParams.points, shapeParams.size);
       } else if (tool === "ARROW" && "x2" in shapeParams) {
         const arrowLength = 10;
         const angle = Math.atan2(shapeParams.y2 - shapeParams.y1, shapeParams.x2 - shapeParams.x1);
@@ -142,16 +215,38 @@ export class CreateShape {
   initMouseHandlers() {
     if (this.isMouseHandlersInitialized) return;
     this.isMouseHandlersInitialized = true;
-    this.canvas.addEventListener("mousedown", this.mouseDownHandler.bind(this));
-    this.canvas.addEventListener("mouseup", this.mouseUpHandler.bind(this));
-    this.canvas.addEventListener("mousemove", this.mouseMoveHandler.bind(this));
+    this.canvas.addEventListener("pointerdown", this.onPointerDown);
+    this.canvas.addEventListener("pointerup", this.onPointerUp);
+    this.canvas.addEventListener("pointercancel", this.onPointerUp);
+    this.canvas.addEventListener("pointermove", this.mouseMoveHandler);
   }
+
+  // Arrow-function properties keep a stable reference so destroy() can really remove them.
+  private onPointerDown = (e: PointerEvent) => {
+    if (this.activePointerId !== null) return; // ignore extra touches mid-stroke
+    this.activePointerId = e.pointerId;
+    this.canvas.setPointerCapture(e.pointerId);
+    this.mouseDownHandler(e);
+  };
+
+  private onPointerUp = (e: PointerEvent) => {
+    if (e.pointerId !== this.activePointerId) return;
+    this.activePointerId = null;
+    this.mouseUpHandler(e);
+  };
 
   mouseDownHandler(e: MouseEvent) {
     if (!this.canvas) return;
     this.startX = e.clientX;
     this.startY = e.clientY;
     this.clicked = true;
+
+    if(this.selectedTool === "FREEHAND") {
+      // Mouse reports a constant 0.5 pressure, so only trust pens and touch with real values.
+      this.usesRealPressure = e instanceof PointerEvent && e.pointerType !== "mouse" && e.pressure > 0;
+      this.points = [this.freehandPoint(e)];
+      return;
+    }
 
     if(this.selectedTool === "PENCIL") {
       this.points.push({x:this.startX, y:this.startY})
@@ -160,10 +255,16 @@ export class CreateShape {
     }
   }
 
+  freehandPoint(e: MouseEvent) {
+    const point: { x: number; y: number; pressure?: number } = { x: e.clientX, y: e.clientY };
+    if (this.usesRealPressure && e instanceof PointerEvent) point.pressure = e.pressure;
+    return point;
+  }
+
   drawRect(e: MouseEvent) {
     const width = e.clientX - this.startX;
     const height = e.clientY - this.startY;
-    this.ctx.strokeStyle = "white";
+    this.ctx.strokeStyle = this.ink;
     this.ctx.strokeRect(this.startX, this.startY, width, height);
   }
 
@@ -274,7 +375,7 @@ export class CreateShape {
       const distanceSq = dx * dx + dy * dy;
 
       return distanceSq <= ERASER_BUFFER * ERASER_BUFFER;
-    } else if(tool === "PENCIL" && "points" in sp) {
+    } else if((tool === "PENCIL" || tool === "FREEHAND") && "points" in sp) {
       const { points } = sp;
       const ERASER_BUFFER = 10;
 
@@ -292,7 +393,7 @@ export class CreateShape {
     }
   }
 
-  mouseMoveHandler(e: MouseEvent) {
+  mouseMoveHandler = (e: PointerEvent) => {
     if (!this.clicked) return;
     if (!this.canvas || !this.ctx) return;
 
@@ -311,10 +412,15 @@ export class CreateShape {
       this.drawLine(e);
     } else if(this.selectedTool === "PENCIL") {
       this.drawPencil(e);
+    } else if(this.selectedTool === "FREEHAND") {
+      // Coalesced events recover the samples the browser merged, which keeps fast strokes smooth.
+      const events = e.getCoalescedEvents?.() ?? [];
+      (events.length ? events : [e]).forEach((ev) => this.points.push(this.freehandPoint(ev)));
+      this.drawFreehand(this.points, FREEHAND_SIZE, false);
     } else if(this.selectedTool === "ARROW") {
       this.drawArrow(e);
     } else if(this.selectedTool === "ERASER") {
-      const deleted: string[] = [];
+      const deleted: (number | string)[] = [];
       [...this.existingShapes].reverse().forEach((shape) => {
         if(shape.id && this.isPointInShape(x, y, shape)) {
           deleted.push(shape.id);
@@ -329,11 +435,11 @@ export class CreateShape {
   deleteViaSocket() {
     if(!this.deleteShapeId.size) return;
 
-    this.socket.send(JSON.stringify({
+    this.send({
       type: "erase",
       shapeIds: Array.from(this.deleteShapeId),
       roomId: this.roomId
-    }));
+    });
     this.deleteShapeId.clear();
   }
 
@@ -387,6 +493,15 @@ export class CreateShape {
         }
       }
       this.points = [];
+    } else if(this.selectedTool === "FREEHAND" && this.points.length > 0) {
+      shapes = {
+        shape: "FREEHAND",
+        shapeParams: {
+          points: this.points,
+          size: FREEHAND_SIZE,
+        }
+      }
+      this.points = [];
     } else if(this.selectedTool === "ARROW") {
       shapes = {
         shape: "ARROW",
@@ -405,15 +520,15 @@ export class CreateShape {
 
     if (!shapes) return;
 
+    shapes.clientId = crypto.randomUUID();
     this.existingShapes.push(shapes);
 
-    this.socket.send(
-      JSON.stringify({
-        type: "chat",
-        shape: shapes.shape,
-        shapeParams: JSON.stringify(shapes.shapeParams),
-        roomId: this.roomId
-      })
-    );
+    this.send({
+      type: "chat",
+      shape: shapes.shape,
+      shapeParams: JSON.stringify(shapes.shapeParams),
+      roomId: this.roomId,
+      clientId: shapes.clientId,
+    });
   }
 }

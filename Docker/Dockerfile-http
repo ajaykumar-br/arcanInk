@@ -1,23 +1,24 @@
 FROM node:20-alpine
 
+# Prisma's query engine needs OpenSSL on Alpine
+RUN apk add --no-cache openssl
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
 WORKDIR /usr/src/app
 
-COPY ./packages  ./packages
-
-COPY ./pnpm-lock.yaml ./pnpm-lock.yaml
-COPY ./pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY ./turbo.json ./turbo.json
-
-COPY ./package.json ./package.json
-
+COPY ./pnpm-lock.yaml ./pnpm-workspace.yaml ./turbo.json ./package.json ./
+COPY ./packages ./packages
 COPY ./apps/http-backend/package.json ./apps/http-backend/package.json
 COPY ./apps/http-backend/tsconfig.json ./apps/http-backend/tsconfig.json
 COPY ./apps/http-backend/src ./apps/http-backend/src
 
-RUN npm install -g pnpm rimraf typescript ts-node
-RUN pnpm install
+# only the workspaces this service needs
+RUN pnpm install --frozen-lockfile --filter http-backend...
 RUN pnpm db:generate
+RUN cd apps/http-backend && pnpm build
 
+ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD [ "pnpm", "start:http" ]
+WORKDIR /usr/src/app/apps/http-backend
+CMD ["node", "dist/index.js"]

@@ -129,10 +129,10 @@ app.get("/getDrawings/:roomId", async (req, res) => {
       where: {
         roomId: roomId,
       },
+      // oldest first so the stacking order matches what users drew
       orderBy: {
-        id: "desc",
+        id: "asc",
       },
-      take: 50,
     });
 
     res.json({
