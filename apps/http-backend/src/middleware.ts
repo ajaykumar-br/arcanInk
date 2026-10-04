@@ -13,14 +13,16 @@ export function middleware(
 ) {
   const token = req.headers["authorization"] ?? "";
 
-  const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-
-  if (decoded) {
-    req.userId = decoded.userId;
-    next();
-  } else {
-    res.status(403).json({
-      msg: "unauthorized request",
-    });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    if (decoded && typeof decoded === "object" && decoded.userId) {
+      req.userId = decoded.userId;
+      return next();
+    }
+  } catch {
+    // invalid or expired token: fall through to 403
   }
+  res.status(403).json({
+    msg: "unauthorized request",
+  });
 }

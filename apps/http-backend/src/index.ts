@@ -138,6 +138,28 @@ app.post("/room", middleware, async (req: CustomRequest, res) => {
   }
 });
 
+// rooms the user created or has drawn in, newest first
+app.get("/rooms", middleware, async (req: CustomRequest, res) => {
+  const userId = req.userId!;
+  const rooms = await prisma.room.findMany({
+    where: {
+      OR: [{ adminId: userId }, { canvas: { some: { userId } } }],
+    },
+    orderBy: { id: "desc" },
+    include: { _count: { select: { canvas: true } } },
+  });
+
+  res.json({
+    rooms: rooms.map((room) => ({
+      id: room.id,
+      slug: room.slug,
+      createdAt: room.createdAt,
+      isOwner: room.adminId === userId,
+      shapeCount: room._count.canvas,
+    })),
+  });
+});
+
 app.get("/getDrawings/:roomId", async (req, res) => {
   try {
     const roomId = Number(req.params.roomId);
